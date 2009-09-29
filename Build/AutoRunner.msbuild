@@ -1,0 +1,50 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <OutputFolder>Output</OutputFolder>
+    <VersionInfo>..\AutoRunner\Properties\VersionInfo.cs</VersionInfo>
+    <AutoRunner>..\AutoRunner\bin\Debug\AutoRunner.exe</AutoRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <MergedAssemblies Include="..\AutoRunner\bin\Debug\*.dll" />
+  </ItemGroup>
+
+  <Target Name="Build">
+
+    <ReadLinesFromFile File="..\VERSION.txt">
+      <Output TaskParameter="Lines" PropertyName="Version" />
+    </ReadLinesFromFile>
+
+    <PropertyGroup>
+      <OutputFolder>AutoRunner-$(Version)</OutputFolder>
+    </PropertyGroup>
+
+    <RemoveDir Directories="$(OutputFolder)" />
+    <MakeDir Directories="$(OutputFolder)" />
+
+    <WriteLinesToFile File="$(VersionInfo)" Overwrite="true" Lines='[assembly: System.Reflection.AssemblyVersion("$(Version)")]' />
+    <WriteLinesToFile File="$(VersionInfo)" Overwrite="false" Lines='[assembly: System.Reflection.AssemblyFileVersion("$(Version)")]' />
+
+    <MSBuild Projects="..\AutoRunner.sln" Targets="Clean;Build" />
+
+    <Exec Command="..\Lib\ILMerge.exe /out:$(OutputFolder)\AutoRunner.exe /ndebug $(AutoRunner) @(MergedAssemblies, ' ')" />
+
+    <Copy SourceFiles="..\README.txt" DestinationFolder="$(OutputFolder)" />
+    <Copy SourceFiles="..\HISTORY.txt" DestinationFolder="$(OutputFolder)" />
+    <Copy SourceFiles="..\LICENSE.txt" DestinationFolder="$(OutputFolder)" />
+    
+    <ItemGroup>
+      <ReleaseFiles Include="$(OutputFolder)\*" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(ReleaseFiles)" DestinationFolder="$(OutputFolder)" />
+
+    <Delete Files="$(OutputFolder).zip" />
+    <Exec Command="..\Lib\7z.exe a $(OutputFolder).zip $(OutputFolder)" />
+
+    <!--<RemoveDir Directories="$(OutputFolder)" />-->
+
+  </Target>
+
+</Project>
