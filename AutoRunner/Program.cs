@@ -15,6 +15,9 @@ namespace AutoRunner
         private static string targetDir;
         private static bool targetIsDir;
         private static string exe;
+        private static string argsFormat = "%t";
+        private static string actualArgs;
+        private static string title = "AutoRunner";
         private static string pass = "Passed!";
         private static string fail = "Failed!";
         private static int delay = 500;
@@ -28,7 +31,9 @@ namespace AutoRunner
             CheckForRequiredOptions();
             NormalizeTarget();
             NormalizeExe();
+            FormatArgs();
             ShowGreeting();
+            SetConsoleTitle();
             RegisterWithGrowl();
             StartWatcher();
             WaitForEver();
@@ -40,6 +45,8 @@ namespace AutoRunner
                           {
                               { "target=", "the path to the file or directory to monitor.", v => target = v },
                               { "exe=", "the path to the exe to run.", v => exe = v },
+                              { "args=", "the args for the exe (use %t for target).", v => argsFormat = v },
+                              { "title=", "the title to set on the console.", v => title = v },
                               { "pass=", "the message to display when the exe passes.", v => pass = v },
                               { "fail=", "the message to display when the exe fails.", v => fail = v },
                               { "delay=", "the milliseconds to wait before running the exe.", v => delay = ParseInt("delay", v) },
@@ -106,11 +113,22 @@ namespace AutoRunner
             exe = Path.GetFullPath(exe);
         }
 
+        private static void FormatArgs()
+        {
+            actualArgs = argsFormat.Replace("%t", target);
+        }
+
         private static void ShowGreeting()
         {
             Console.WriteLine("Target: {0}", target);
-            Console.WriteLine("Executable: {0} {1}", exe, target);
+            Console.WriteLine("Executable: {0}", exe);
+            Console.WriteLine("Args: {0}", actualArgs);
             Console.WriteLine();
+        }
+
+        private static void SetConsoleTitle()
+        {
+            Console.Title = title;
         }
 
         private static void RegisterWithGrowl()
@@ -135,7 +153,7 @@ namespace AutoRunner
         {
             if (targetIsDir || e.FullPath == target)
             {
-                Trace("{0} changed!", e.FullPath);
+                TraceLine("{0} changed!", e.FullPath);
                 changeCount++;
                 new Timer(OnDelayExpired, changeCount, delay, Timeout.Infinite);
             }
@@ -151,11 +169,12 @@ namespace AutoRunner
 
         private static void RunExe()
         {
-            Console.WriteLine();
-            Console.WriteLine("Running {0} {1}", exe, target);
-            Console.WriteLine();
+            Console.Clear();
 
-            var info = new ProcessStartInfo(exe, target);
+            TraceLine("Running {0} {1}", exe, actualArgs);
+            TraceLine();
+
+            var info = new ProcessStartInfo(exe, actualArgs);
             info.UseShellExecute = false;
             info.RedirectStandardOutput = true;
 
@@ -175,7 +194,7 @@ namespace AutoRunner
         {
             var process = (Process)sender;
 
-            Trace("Process exited with {0}!", process.ExitCode);
+            TraceLine("Process exited with {0}!", process.ExitCode);
 
             if (process.ExitCode == 0)
             {
@@ -187,7 +206,12 @@ namespace AutoRunner
             }
         }
 
-        private static void Trace(string format, params object[] args)
+        private static void TraceLine()
+        {
+            TraceLine("");
+        }
+
+        private static void TraceLine(string format, params object[] args)
         {
             if (verbose)
             {
