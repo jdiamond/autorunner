@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using AutoRunner.Properties;
 using Growl.Connector;
 using Mono.Options;
 
@@ -136,8 +137,8 @@ namespace AutoRunner
             growl = new GrowlConnector();
 
             var app = new Application("AutoRunner");
-            var passedType = new NotificationType("PASSED", "Passed");
-            var failedType = new NotificationType("FAILED", "Failed");
+            var passedType = new NotificationType("PASSED", "Passed", Resources.passed, true);
+            var failedType = new NotificationType("FAILED", "Failed", Resources.failed, true);
             
             growl.Register(app, new[] { passedType, failedType });
         }

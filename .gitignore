@@ -3,4 +3,5 @@ bin
 obj
 _ReSharper*
 *.suo
-
+Build/
+TestResult.xml
